@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => {
 
-        const databaseUrl = configService.get<string>('postgresql://movil_app_user:CBFLv8eY3Tk2TyzETYwemTSHxm2Gp7vE@dpg-d6bs9hl6ubrc73ef06u0-a.oregon-postgres.render.com/movil_app');
+        const databaseUrl = configService.get<string>('DATABASE_URL');
 
         if (databaseUrl) {
           // PRODUCCIÓN (Render)
