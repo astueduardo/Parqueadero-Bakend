@@ -21,7 +21,7 @@ import { RateLimitService } from './rate-limit.service';
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({
                 secret: configService.get<string>('JWT_SECRET'),
-                signOptions: { expiresIn: '24h' },
+                signOptions: { expiresIn: '30D' },
             }),
             inject: [ConfigService],
         }),

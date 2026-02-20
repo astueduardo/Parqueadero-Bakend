@@ -29,6 +29,7 @@ import { QrModule } from './modules/qr/qr.module';
     AuditLogModule,
     QrModule,
 
+
   ],
   controllers: [AppController],
   providers: [AppService],
