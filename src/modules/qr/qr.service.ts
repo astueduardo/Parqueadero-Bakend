@@ -30,6 +30,7 @@ export class QrService {
   async getQrImage(data: string): Promise<string> {
     return this.generateQrImageUrl(data);
   }
+
   // =========================
   // GENERAR QR BASE64
   // =========================
@@ -69,10 +70,11 @@ export class QrService {
       // ========= ENTRY =========
       if (reservation.status === ReservationStatus.CONFIRMED) {
 
-        const entryStart = new Date(reservation.start_time);
+        // ✅ Corregido: start_time → startTime
+        const entryStart = new Date(reservation.startTime);
         entryStart.setMinutes(entryStart.getMinutes() - 5);
 
-        const entryEnd = new Date(reservation.start_time);
+        const entryEnd = new Date(reservation.startTime);
         entryEnd.setMinutes(entryEnd.getMinutes() + 5);
 
         if (now > entryEnd) {

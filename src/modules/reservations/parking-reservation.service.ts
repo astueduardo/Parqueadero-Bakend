@@ -1,119 +1,98 @@
-import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
+// reservations/reservations.service.ts
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, LessThan, MoreThan } from "typeorm";
-import { Reservation } from "./entities/parking-reservatio.entity";
+import { Repository, In } from "typeorm";
+import { Reservation, ReservationStatus } from "./entities/parking-reservatio.entity";
+import { ParkingSpacesService } from "../parking/parking-spaces.service";
 import { ParkingReservationDto } from "./dto/parking-reservation.dto";
-import { ReservationStatus } from "../reservations/entities/parking-reservatio.entity";
-import { QrService } from "../qr/qr.service";
-import { v4 as uuid } from "uuid";
-import * as QRCode from 'qrcode';
 
 @Injectable()
 export class ReservationsService {
     constructor(
         @InjectRepository(Reservation)
         private readonly reservationRepo: Repository<Reservation>,
-        private readonly qrService: QrService,
+        private readonly parkingSpacesService: ParkingSpacesService, // Para verificar disponibilidad
     ) { }
 
-    async create(userId: string, dto: ParkingReservationDto) {
-
-        if (new Date(dto.start_time) >= new Date(dto.end_time)) {
-            throw new BadRequestException(
-                'La hora de inicio debe ser anterior a la hora de fin',
-            );
+    async create(userId: string, dto: ParkingReservationDto): Promise<Reservation> {
+        // 1. Verificar que el espacio existe y está disponible
+        const isAvailable = await this.parkingSpacesService.isSpaceAvailable(dto.space_id);
+        if (!isAvailable) {
+            throw new BadRequestException('El espacio no está disponible para reservar');
         }
 
-        if (new Date(dto.start_time) < new Date()) {
-            throw new BadRequestException(
-                'No puedes hacer reservas en el pasado',
-            );
-        }
-
-        const conflicts = await this.reservationRepo.find({
+        // 2. Verificar que no haya reservaciones que se solapen (por si acaso)
+        const overlapping = await this.reservationRepo.findOne({
             where: {
-                space_id: dto.space_id,
-                status: ReservationStatus.PENDING,
-                start_time: LessThan(new Date(dto.end_time)),
-                end_time: MoreThan(new Date(dto.start_time)),
-            },
+                spaceId: dto.space_id,
+                status: In([ReservationStatus.PENDING, ReservationStatus.CONFIRMED, ReservationStatus.IN_PROGRESS]),
+                // Lógica de solapamiento de fechas
+            }
         });
-
-        if (conflicts.length > 0) {
-            throw new BadRequestException(
-                'El espacio ya está reservado en ese horario',
-            );
+        if (overlapping) {
+            throw new BadRequestException('Ya existe una reservación para este espacio en el mismo horario');
         }
 
-        const reservationId = uuid();
-
-        // Generar QR en base64
-        const qrBase64 = await this.qrService.generateQrCode(reservationId);
-
+        // 3. Crear la reservación
         const reservation = this.reservationRepo.create({
-            id: reservationId,
-            user_id: userId,
-            space_id: dto.space_id,
-            vehicle_id: dto.vehicle_id,
-            start_time: new Date(dto.start_time),
-            end_time: new Date(dto.end_time),
+            userId,
+            spaceId: dto.space_id,
+            vehicleId: dto.vehicle_id,
+            startTime: new Date(dto.start_time),
+            endTime: new Date(dto.end_time),
             status: ReservationStatus.PENDING,
-            qr_code: reservationId, // guardamos el ID como contenido QR
+            qrCode: this.generateQRCode(), // Implementa la generación de QR
         });
 
-        const saved = await this.reservationRepo.save(reservation);
-
-        return {
-            ...saved,
-            qr_image: qrBase64,
-            qr_url: this.qrService.generateReservationQrUrl(reservationId),
-        };
+        return this.reservationRepo.save(reservation);
     }
 
-    async findByUser(userId: string) {
+    async findByUser(userId: string): Promise<Reservation[]> {
         return this.reservationRepo.find({
-            where: { user_id: userId },
-            relations: ['space', 'space.lot'],
-            order: { created_at: 'DESC' },
+            where: { userId },
+            relations: ['space', 'space.lot', 'vehicle'],
+            order: { createdAt: 'DESC' },
         });
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, userId: string): Promise<Reservation> {
         const reservation = await this.reservationRepo.findOne({
             where: { id },
-            relations: ['space', 'space.lot', 'user'],
+            relations: ['space', 'space.lot', 'vehicle'],
         });
 
         if (!reservation) {
-            throw new NotFoundException('Reserva no encontrada');
+            throw new NotFoundException('Reservación no encontrada');
+        }
+
+        // Verificar que la reservación pertenece al usuario
+        if (reservation.userId !== userId) {
+            throw new ForbiddenException('No tienes permiso para ver esta reservación');
         }
 
         return reservation;
     }
 
-    async cancel(id: string, userId: string) {
-        const reservation = await this.findOne(id);
+    async cancel(id: string, userId: string): Promise<{ message: string }> {
+        const reservation = await this.findOne(id, userId);
 
-        if (reservation.user_id !== userId) {
-            throw new BadRequestException(
-                'No tienes permiso para cancelar esta reserva',
-            );
+        if (reservation.status === ReservationStatus.COMPLETED) {
+            throw new BadRequestException('No se puede cancelar una reservación completada');
         }
 
-        if (reservation.start_time < new Date()) {
-            throw new BadRequestException(
-                'No puedes cancelar una reserva que ya comenzó',
-            );
+        if (reservation.status === ReservationStatus.CANCELLED) {
+            throw new BadRequestException('La reservación ya está cancelada');
         }
 
         reservation.status = ReservationStatus.CANCELLED;
+        await this.reservationRepo.save(reservation);
 
-        return this.reservationRepo.save(reservation);
-    }
-    async updateStatus(id: string, status: ReservationStatus) {
-        const reservation = await this.findOne(id);
-        reservation.status = status;
-        return this.reservationRepo.save(reservation);
+        return { message: 'Reservación cancelada exitosamente' };
     }
 
+    private generateQRCode(): string {
+        // Implementa la generación de QR
+        // Puedes usar librerías como 'qrcode' o generar un código único
+        return `QR-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    }
 }

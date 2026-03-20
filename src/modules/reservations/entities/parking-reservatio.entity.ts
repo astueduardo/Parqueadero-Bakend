@@ -2,53 +2,69 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
+    ManyToOne,
     CreateDateColumn,
     UpdateDateColumn,
-} from 'typeorm';
+    JoinColumn,
+} from "typeorm";
+import { User } from "../../users/entities/user.entity";
+import { ParkingSpace } from "../../parking/entities/parking-space.entity";
+import { Vehicle } from "../../vehiculo/entities/vehicle.entity";
 
 export enum ReservationStatus {
-    PENDING = 'PENDING',
-    CONFIRMED = 'CONFIRMED',
-    IN_PROGRESS = 'IN_PROGRESS',
-    COMPLETED = 'COMPLETED',
-    NO_SHOW = 'NO_SHOW',
-    CANCELLED = 'CANCELLED',
+    PENDING = "PENDING",
+    CONFIRMED = "CONFIRMED",
+    IN_PROGRESS = "IN_PROGRESS",
+    COMPLETED = "COMPLETED",
+    NO_SHOW = "NO_SHOW",
+    CANCELLED = "CANCELLED",
 }
 
-@Entity('reservations')
+@Entity("reservations")
 export class Reservation {
-
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryGeneratedColumn("uuid")
     id: string;
 
-    @Column('uuid')
-    user_id: string;
+    @ManyToOne(() => User, { onDelete: "CASCADE" })
+    @JoinColumn({ name: "user_id" })
+    user: User;
 
-    @Column('uuid')
-    space_id: string;
+    @Column({ name: "user_id", type: "uuid" })
+    userId: string;
 
-    @Column('uuid', { nullable: true })
-    vehicle_id: string;
+    @ManyToOne(() => ParkingSpace)
+    @JoinColumn({ name: "space_id" })
+    space: ParkingSpace;
 
-    @Column('timestamp')
-    start_time: Date;
+    @Column({ name: "space_id", type: "uuid" })
+    spaceId: string;
 
-    @Column('timestamp')
-    end_time: Date;
+    @ManyToOne(() => Vehicle, { nullable: true })
+    @JoinColumn({ name: "vehicle_id" })
+    vehicle: Vehicle;
+
+    @Column({ name: "vehicle_id", type: "uuid", nullable: true })
+    vehicleId: string;
+
+    @Column({ name: "start_time", type: "timestamp" })
+    startTime: Date;
+
+    @Column({ name: "end_time", type: "timestamp" })
+    endTime: Date;
 
     @Column({
-        type: 'varchar',
-        length: 20,
+        type: "enum",
+        enum: ReservationStatus,
         default: ReservationStatus.PENDING,
     })
     status: ReservationStatus;
 
-    @Column('text')
-    qr_code: string;
+    @Column({ name: "qr_code", type: "text" })
+    qrCode: string;
 
-    @CreateDateColumn({ type: 'timestamp' })
-    created_at: Date;
+    @CreateDateColumn({ name: "created_at" })
+    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamp' })
-    updated_at: Date;
+    @UpdateDateColumn({ name: "updated_at" })
+    updatedAt: Date;
 }

@@ -24,18 +24,18 @@ export class User {
   googleId: string | null;
 
   @Column({
-    type: "enum",
-    enum: ["local", "google"],
+    type: "varchar",
+    length: 20,
     default: "local",
   })
   auth_provider: "local" | "google";
 
   @Column({
-    type: "enum",
-    enum: ["admin", "user"],
+    type: "varchar",
+    length: 20,
     default: "user",
   })
-  role: "user" | "admin";
+  role: "user" | "admin" | "owner" | "operator";
 
   @CreateDateColumn()
   created_at: Date;

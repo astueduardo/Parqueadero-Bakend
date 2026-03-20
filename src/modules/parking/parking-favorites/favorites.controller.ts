@@ -1,41 +1,55 @@
-import { Controller, Post, Delete, Get, Param, UseGuards, Req, Body } from '@nestjs/common';
-import { FavoritesService } from './favorites.service';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { AddFavoriteDto } from '../dto/add-favorite.dto';
+import {
+    Controller,
+    Get,
+    Post,
+    Delete,
+    Param,
+    UseGuards,
+    Request,
+    HttpCode,
+    HttpStatus,
+} from "@nestjs/common";
+import { FavoritesService } from "../parking-favorites/favorites.service";
+import { JwtAuthGuard } from "../../../common/guards/jwt-auth.guard";
 
-@Controller('favorites')
-@UseGuards(JwtAuthGuard)
+@Controller("favorites")
+@UseGuards(JwtAuthGuard) // todas las rutas requieren auth
 export class FavoritesController {
     constructor(private readonly favoritesService: FavoritesService) { }
 
-    @Post()
-    async addFavorite(@Req() req: any, @Body() body: AddFavoriteDto) {
-        return this.favoritesService.addFavorite(req.user.id, body.parking_lot_id);
-    }
-
+    // Mis favoritos
     @Get()
-    async getFavorites(@Req() req: any) {
-        return this.favoritesService.getFavorites(req.user.id);
+    getMyFavorites(@Request() req) {
+        const userId = req.user.user_id || req.user.id;
+        return this.favoritesService.getMyFavorites(userId);
     }
 
-    @Delete(':parkingLotId')
-    async removeFavorite(
-        @Req() req: any,
-        @Param('parkingLotId') parkingLotId: string,
-    ) {
-        await this.favoritesService.removeFavorite(req.user.id, parkingLotId);
-        return { success: true };
+    // Verificar si un parqueadero es favorito
+    @Get(":parkingLotId/check")
+    isFavorite(@Param("parkingLotId") parkingLotId: string, @Request() req) {
+        const userId = req.user.user_id || req.user.id;
+        return this.favoritesService.isFavorite(userId, parkingLotId);
     }
 
-    @Get('check/:parkingLotId')
-    async isFavorite(
-        @Req() req: any,
-        @Param('parkingLotId') parkingLotId: string,
-    ) {
-        const isFav = await this.favoritesService.isFavorite(
-            req.user.id,
-            parkingLotId,
-        );
-        return { isFavorite: isFav };
+    // Toggle: agrega o quita según estado actual (el más útil para el móvil)
+    @Post(":parkingLotId/toggle")
+    toggle(@Param("parkingLotId") parkingLotId: string, @Request() req) {
+        const userId = req.user.user_id || req.user.id;
+        return this.favoritesService.toggleFavorite(userId, parkingLotId);
+    }
+
+    // Agregar a favoritos
+    @Post(":parkingLotId")
+    add(@Param("parkingLotId") parkingLotId: string, @Request() req) {
+        const userId = req.user.user_id || req.user.id;
+        return this.favoritesService.addFavorite(userId, parkingLotId);
+    }
+
+    // Quitar de favoritos
+    @Delete(":parkingLotId")
+    @HttpCode(HttpStatus.OK)
+    remove(@Param("parkingLotId") parkingLotId: string, @Request() req) {
+        const userId = req.user.user_id || req.user.id;
+        return this.favoritesService.removeFavorite(userId, parkingLotId);
     }
 }

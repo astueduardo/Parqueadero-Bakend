@@ -6,12 +6,12 @@ import databaseConfig from './config/database.config';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { ParkingLotsModule } from './modules/parking/parking-lots/parking-lots.module';
 import { FavoritesModule } from './modules/parking/parking-favorites/favorites.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { VehiclesModule } from './modules/vehiculo/vehicles.module';
 import { AuditLogModule } from './modules/audit/audit-log.module';
 import { QrModule } from './modules/qr/qr.module';
+import { ParkingModule } from './modules/parking/parking.module'; // Importamos el módulo de parking
 
 @Module({
   imports: [
@@ -21,10 +21,10 @@ import { QrModule } from './modules/qr/qr.module';
     }),
     DatabaseModule,
     AuthModule,
+    ParkingModule,
     UsersModule,
-    ParkingLotsModule,
-    FavoritesModule,
     ReservationsModule,
+    FavoritesModule,
     VehiclesModule,
     AuditLogModule,
     QrModule,

@@ -3,9 +3,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
-  OneToMany,
-  JoinColumn,
   CreateDateColumn,
+  JoinColumn,
 } from "typeorm";
 import { ParkingLot } from "./parking-Lot.entity";
 
@@ -14,31 +13,25 @@ export class ParkingSpace {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column({ length: 20 })
-  code: string; // Ej: "A-1", "B-15"
-
-  @Column({ length: 20, default: "regular" })
-  type: string; // regular, handicapped, electric, motorcycle
-
-  @Column("int", { default: 1 })
-  floor: number;
-
-  @Column({ default: true })
-  is_active: boolean;
-
-  @CreateDateColumn()
-  created_at: Date;
-
-  @ManyToOne(() => ParkingLot, (lot) => lot.spaces, {
-    onDelete: "CASCADE",
-  })
+  @ManyToOne(() => ParkingLot, (lot) => lot.spaces, { onDelete: "CASCADE" })
   @JoinColumn({ name: "lot_id" })
   lot: ParkingLot;
 
-  @Column("uuid")
-  lot_id: string;
+  @Column({ name: "lot_id", type: "uuid" })
+  lotId: string;
 
-  // Relación con reservas (será creada en módulo de reservations)
-  @OneToMany("Reservation", "space")
-  reservations: any[];
+  @Column({ length: 20 })
+  code: string; // ej: A1, B2, C3
+
+  @Column({ length: 20 })
+  type: string; // ej: regular, discapacitado, moto
+
+  @Column({ default: true, name: "is_active" })
+  isActive: boolean;
+
+  @Column({ default: 1 })
+  floor: number;
+
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
 }

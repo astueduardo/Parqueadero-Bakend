@@ -2,43 +2,37 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
+  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
-  ManyToOne,
   JoinColumn,
 } from "typeorm";
-import { ParkingSpace } from "./parking-space.entity";
 import { User } from "../../users/entities/user.entity";
+import { ParkingSpace } from "./parking-space.entity";
 
 @Entity("parking_lots")
 export class ParkingLot {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column()
+  @Column({ length: 120 })
   name: string;
 
-  @Column()
+  @Column({ length: 200 })
   address: string;
 
-  @Column({ type: "numeric" })
-  total_spaces: number;
+  @Column({ name: "total_spaces" })
+  totalSpaces: number;
 
-  @Column({ type: "numeric" })
-  available_spaces: number;
+  @Column({ name: "available_spaces" })
+  availableSpaces: number;
 
-  @CreateDateColumn()
-  created_at: Date;
-
-  @UpdateDateColumn()
-  updated_at: Date;
-
-  @Column({ type: "numeric", nullable: true })
-  price: number;
-
-  @Column({ type: "numeric", nullable: true })
+  @Column({ type: "numeric", precision: 2, scale: 1, nullable: true })
   rating: number;
+
+  @Column({ type: "numeric", precision: 10, scale: 2, nullable: true })
+  price: number;
 
   @Column({ type: "numeric", precision: 10, scale: 8, nullable: true })
   latitude: number;
@@ -46,20 +40,24 @@ export class ParkingLot {
   @Column({ type: "numeric", precision: 11, scale: 8, nullable: true })
   longitude: number;
 
-  @ManyToOne(() => User, { onDelete: "SET NULL" })
+  @Column({ name: "is_active", default: true })
+  isActive: boolean;
+
+  /* Dueño del parqueadero */
+  @ManyToOne(() => User, { onDelete: "SET NULL", nullable: true })
   @JoinColumn({ name: "owner_id" })
   owner: User;
 
-  @Column("uuid", { nullable: true })
-  owner_id: string;
+  @Column({ name: "owner_id", type: "uuid", nullable: true })
+  ownerId: string;
 
-  @Column({ default: true })
-  is_active: boolean;
-
-  @OneToMany(() => ParkingSpace, (space) => space.lot)
+  /* Espacios del parqueadero */
+  @OneToMany(() => ParkingSpace, (space) => space.lot, { cascade: true })
   spaces: ParkingSpace[];
 
-  @OneToMany("Favorite", "parkingLot")
-  favorites: any[];
-}
+  @CreateDateColumn({ name: "created_at" })
+  createdAt: Date;
 
+  @UpdateDateColumn({ name: "updated_at" })
+  updatedAt: Date;
+}

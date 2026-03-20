@@ -8,7 +8,6 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { GoogleStrategy } from './strategies/google.strategy';
 import { RateLimitService } from './rate-limit.service';
 
 @Module({
@@ -31,7 +30,7 @@ import { RateLimitService } from './rate-limit.service';
         JwtAuthGuard,
         JwtStrategy,
         RolesGuard,
-        GoogleStrategy,
+
         RateLimitService,
     ],
     controllers: [AuthController],

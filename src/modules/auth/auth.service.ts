@@ -113,34 +113,14 @@ export class AuthService {
         googleId: payload.sub,
         password: null,
         auth_provider: "google",
+        role: "user",
       });
     }
 
     return this.generateToken(user);
   }
 
-  // ===============================
-  // LOGIN GOOGLE (WEB - Passport Strategy)
-  // ===============================
-  async googleLoginFromProfile(profile: {
-    googleId: string;
-    email: string;
-    name: string;
-  }) {
-    let user = await this.usersService.findByEmail(profile.email);
 
-    if (!user) {
-      user = await this.usersService.create({
-        email: profile.email,
-        name: profile.name,
-        googleId: profile.googleId,
-        password: null,
-        auth_provider: "google",
-      });
-    }
-
-    return this.generateToken(user);
-  }
 
   // ===============================
   // JWT
@@ -158,6 +138,7 @@ export class AuthService {
         email: user.email,
         auth_provider: user.auth_provider,
         role: user.role,
+        createdAt: user.created_at,
       },
     };
   }

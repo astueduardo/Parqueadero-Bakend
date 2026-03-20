@@ -1,55 +1,126 @@
-// ==================== PARKING LOT DTOs ====================
+import { IsString, IsInt, IsNumber, IsOptional, IsBoolean, IsUUID, Min, Max, Length } from "class-validator";
 
-export interface ParkingLotResponseDto {
-    id: string;
-    name: string;
-    address: string;
-    latitude: number;
-    longitude: number;
-    available: number;
-    total: number;
-    price: number;
-    rating: number;
-    distance: number;
-    etaMinutes: number;
-    tags: string[];
-    isFavorite: boolean;
-}
+// ─── PARKING LOT ───────────────────────────────────────────
 
 export class CreateParkingLotDto {
+    @IsString()
+    @Length(3, 120)
     name: string;
+
+    @IsString()
+    @Length(5, 200)
     address: string;
+
+    @IsInt()
+    @Min(1)
+    totalSpaces: number;
+
+    @IsInt()
+    @Min(0)
+    availableSpaces: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    @Max(5)
+    rating?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    price?: number;
+
+    @IsOptional()
+    @IsNumber()
     latitude?: number;
+
+    @IsOptional()
+    @IsNumber()
     longitude?: number;
-    total_spaces: number;
-    price: number;
 }
 
 export class UpdateParkingLotDto {
+    @IsOptional()
+    @IsString()
+    @Length(3, 120)
     name?: string;
+
+    @IsOptional()
+    @IsString()
+    @Length(5, 200)
     address?: string;
-    latitude?: number;
-    longitude?: number;
-    total_spaces?: number;
-    available_spaces?: number;
-    price?: number;
+
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    totalSpaces?: number;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    availableSpaces?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    @Max(5)
     rating?: number;
-    is_active?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    price?: number;
+
+    @IsOptional()
+    @IsNumber()
+    latitude?: number;
+
+    @IsOptional()
+    @IsNumber()
+    longitude?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
 }
 
-// ==================== PARKING SPACE DTOs ====================
-
-export interface ParkingSpaceResponseDto {
-    id: string;
-    number: string;
-    status: "available" | "reserved" | "occupied";
-    floor: number;
-    type: string;
-}
+// ─── PARKING SPACE ─────────────────────────────────────────
 
 export class CreateParkingSpaceDto {
+    @IsUUID()
+    lotId: string;
+
+    @IsString()
+    @Length(1, 20)
     code: string;
-    type: string;
-    floor: number;
-    lot_id: string;
+
+    @IsString()
+    @Length(1, 20)
+    type: string; // regular | discapacitado | moto
+
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    floor?: number;
+}
+
+export class UpdateParkingSpaceDto {
+    @IsOptional()
+    @IsString()
+    @Length(1, 20)
+    code?: string;
+
+    @IsOptional()
+    @IsString()
+    @Length(1, 20)
+    type?: string;
+
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    floor?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
 }

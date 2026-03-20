@@ -1,7 +1,11 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Favorite } from '../entities/favorite.entity';
+import {
+    Injectable,
+    NotFoundException,
+    ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Favorite } from "./entities/favorite.entity";
 
 @Injectable()
 export class FavoritesService {
@@ -10,49 +14,64 @@ export class FavoritesService {
         private readonly favoriteRepo: Repository<Favorite>,
     ) { }
 
+    // Obtener todos los favoritos del usuario
+    async getMyFavorites(userId: string): Promise<Favorite[]> {
+        return this.favoriteRepo.find({
+            where: { userId },
+            relations: ["parkingLot"],
+            order: { createdAt: "DESC" },
+        });
+    }
+
+    // Verificar si un parqueadero es favorito
+    async isFavorite(userId: string, parkingLotId: string): Promise<{ isFavorite: boolean }> {
+        const favorite = await this.favoriteRepo.findOne({
+            where: { userId, parkingLotId },
+        });
+        return { isFavorite: !!favorite };
+    }
+
+    // Agregar a favoritos
     async addFavorite(userId: string, parkingLotId: string): Promise<Favorite> {
-        const existing = await this.favoriteRepo.findOne({
-            where: { user_id: userId, parking_lot_id: parkingLotId },
+        const exists = await this.favoriteRepo.findOne({
+            where: { userId, parkingLotId },
         });
 
-        if (existing) {
-            throw new BadRequestException(
-                'Este estacionamiento ya está en tus favoritos',
-            );
+        if (exists) {
+            throw new ConflictException("Este parqueadero ya está en tus favoritos");
         }
 
-        const favorite = this.favoriteRepo.create({
-            user_id: userId,
-            parking_lot_id: parkingLotId,
-        });
-
+        const favorite = this.favoriteRepo.create({ userId, parkingLotId });
         return this.favoriteRepo.save(favorite);
     }
 
-    async removeFavorite(userId: string, parkingLotId: string): Promise<void> {
-        const result = await this.favoriteRepo.delete({
-            user_id: userId,
-            parking_lot_id: parkingLotId,
-        });
-
-        if (result.affected === 0) {
-            throw new NotFoundException('Favorito no encontrado');
-        }
-    }
-
-    async getFavorites(userId: string): Promise<Favorite[]> {
-        return this.favoriteRepo.find({
-            where: { user_id: userId },
-            relations: ['parkingLot'],
-            order: { created_at: 'DESC' },
-        });
-    }
-
-    async isFavorite(userId: string, parkingLotId: string): Promise<boolean> {
+    // Quitar de favoritos
+    async removeFavorite(userId: string, parkingLotId: string): Promise<{ message: string }> {
         const favorite = await this.favoriteRepo.findOne({
-            where: { user_id: userId, parking_lot_id: parkingLotId },
+            where: { userId, parkingLotId },
         });
 
-        return !!favorite;
+        if (!favorite) {
+            throw new NotFoundException("Este parqueadero no está en tus favoritos");
+        }
+
+        await this.favoriteRepo.remove(favorite);
+        return { message: "Eliminado de favoritos correctamente" };
+    }
+
+    // Toggle: si existe lo quita, si no existe lo agrega
+    async toggleFavorite(userId: string, parkingLotId: string): Promise<{ isFavorite: boolean; message: string }> {
+        const existing = await this.favoriteRepo.findOne({
+            where: { userId, parkingLotId },
+        });
+
+        if (existing) {
+            await this.favoriteRepo.remove(existing);
+            return { isFavorite: false, message: "Eliminado de favoritos" };
+        }
+
+        const favorite = this.favoriteRepo.create({ userId, parkingLotId });
+        await this.favoriteRepo.save(favorite);
+        return { isFavorite: true, message: "Agregado a favoritos" };
     }
 }
