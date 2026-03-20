@@ -34,13 +34,13 @@ export class ParkingService {
         return this.lotRepo.find({
             where: { isActive: true },
             relations: ["owner"],
-            order: { createdAt: "DESC" },
+            order: { created_at: "DESC" },
         });
     }
     // ─── AGREGAR ESTE MÉTODO en ParkingService ───────────────────────────────────
     // Dentro de la clase ParkingService, después de findSpacesByLot
 
-   
+
     // ─── AGREGAR ESTE ENDPOINT en ParkingSpacesController ────────────────────────
     // Antes del @Get(':id')
 
@@ -50,7 +50,7 @@ export class ParkingService {
         return this.lotRepo.find({
             where: { ownerId },
             relations: ["spaces"],
-            order: { createdAt: "DESC" },
+            order: { created_at: "DESC" },
         });
     }
 

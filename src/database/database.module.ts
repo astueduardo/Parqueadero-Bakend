@@ -1,41 +1,46 @@
+// database/database.module.ts
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const nodeEnv = process.env.NODE_ENV || 'development';
+        const isProduction = nodeEnv === 'production';
 
-        const databaseUrl = configService.get<string>('DATABASE_URL');
-
-        if (databaseUrl) {
-          // PRODUCCIÓN (Render)
+        if (isProduction && process.env.DATABASE_URL) {
+          // Usar configuración cloud
+          const cloudConfig = configService.get('database-cloud');
           return {
             type: 'postgres',
-            url: databaseUrl,
+            url: cloudConfig.url,
+            synchronize: cloudConfig.synchronize,
             autoLoadEntities: true,
-            synchronize: true,
             ssl: {
               rejectUnauthorized: false,
             },
           };
         }
 
+        // Usar configuración local
+        const localConfig = configService.get('database-local');
         return {
           type: 'postgres',
-          host: configService.get('database.host'),
-          port: configService.get<number>('database.port'),
-          username: configService.get('database.username'),
-          password: configService.get('database.password'),
-          database: configService.get('database.database'),
-          entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-          synchronize: configService.get<boolean>('database.synchronize'),
-          logging: true,
+          host: localConfig.host,
+          port: localConfig.port,
+          username: localConfig.username,
+          password: localConfig.password,
+          database: localConfig.database,
+          synchronize: localConfig.synchronize,
+          autoLoadEntities: true,
         };
       },
-      inject: [ConfigService],
-    })
+    }),
   ],
+  exports: [TypeOrmModule],
 })
 export class DatabaseModule { }
