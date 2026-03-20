@@ -14,22 +14,22 @@ import { ParkingLot } from "../../entities/parking-Lot.entity";
 @Unique("uq_fav_user_parking", ["userId", "parkingLotId"]) // evita duplicados
 export class Favorite {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id!: string;
 
     @ManyToOne(() => User, { onDelete: "CASCADE" })
     @JoinColumn({ name: "user_id" })
-    user: User;
+    user!: User;
 
     @Column({ name: "user_id", type: "uuid" })
-    userId: string;
+    userId!: string;
 
     @ManyToOne(() => ParkingLot, { onDelete: "CASCADE" })
     @JoinColumn({ name: "parking_lot_id" })
-    parkingLot: ParkingLot;
+    parkingLot!: ParkingLot;
 
     @Column({ name: "parking_lot_id", type: "uuid" })
-    parkingLotId: string;
+    parkingLotId!: string;
 
     @CreateDateColumn({ name: "created_at" })
-    createdAt: Date;
+    createdAt!: Date;
 }

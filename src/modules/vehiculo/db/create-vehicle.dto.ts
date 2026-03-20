@@ -16,12 +16,12 @@ export class CreateVehicleDto {
     @Matches(/^[A-Z]{3}-\d{4}$/, {
         message: "La placa debe tener el formato ABC-1234 (3 letras mayúsculas, guion, 4 números)"
     })
-    plate_number: string;
+    plate_number!: string;
 
     @IsString()
     @IsNotEmpty({ message: "La marca es obligatoria" })
     @Length(2, 50, { message: "La marca debe tener entre 2 y 50 caracteres" })
-    brand: string;
+    brand!: string;
 
     @IsString()
     @IsOptional()
@@ -31,12 +31,12 @@ export class CreateVehicleDto {
     @IsString()
     @IsNotEmpty({ message: "El color es obligatorio" })
     @Length(3, 30, { message: "El color debe tener entre 3 y 30 caracteres" })
-    color: string;
+    color!: string;
 
     @IsString()
     @IsNotEmpty({ message: "El tipo de vehículo es obligatorio" })
     @Length(3, 20, { message: "El tipo debe tener entre 3 y 20 caracteres" })
-    vehicle_type: string;
+    vehicle_type!: string;
 
     @IsInt({ message: "El año debe ser un número entero" })
     @IsOptional()

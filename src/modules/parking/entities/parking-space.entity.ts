@@ -11,27 +11,27 @@ import { ParkingLot } from "./parking-Lot.entity";
 @Entity("parking_spaces")
 export class ParkingSpace {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
   @ManyToOne(() => ParkingLot, (lot) => lot.spaces, { onDelete: "CASCADE" })
   @JoinColumn({ name: "lot_id" })
-  lot: ParkingLot;
+  lot!: ParkingLot;
 
   @Column({ name: "lot_id", type: "uuid" })
-  lotId: string;
+  lotId!: string;
 
   @Column({ length: 20 })
-  code: string; // ej: A1, B2, C3
+  code!: string; // ej: A1, B2, C3
 
   @Column({ length: 20 })
-  type: string; // ej: regular, discapacitado, moto
+  type!: string; // ej: regular, discapacitado, moto
 
   @Column({ default: true, name: "is_active" })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Column({ default: 1 })
-  floor: number;
+  floor!: number;
 
   @CreateDateColumn({ name: "created_at" })
-  createdAt: Date;
+  createdAt!: Date;
 }

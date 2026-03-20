@@ -3,7 +3,7 @@ import { IsUUID, IsNotEmpty, IsDateString, IsOptional } from 'class-validator';
 export class ParkingReservationDto {
     @IsUUID()
     @IsNotEmpty()
-    space_id: string;
+    space_id!: string;
 
     @IsOptional()
     @IsUUID()
@@ -11,10 +11,10 @@ export class ParkingReservationDto {
 
     @IsDateString()
     @IsNotEmpty()
-    start_time: string;
+    start_time!: string;
 
     @IsDateString()
     @IsNotEmpty()
-    end_time: string;
+    end_time!: string;
 }
 

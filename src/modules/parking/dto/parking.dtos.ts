@@ -5,19 +5,19 @@ import { IsString, IsInt, IsNumber, IsOptional, IsBoolean, IsUUID, Min, Max, Len
 export class CreateParkingLotDto {
     @IsString()
     @Length(3, 120)
-    name: string;
+    name!: string;
 
     @IsString()
     @Length(5, 200)
-    address: string;
+    address!: string;
 
     @IsInt()
     @Min(1)
-    totalSpaces: number;
+    totalSpaces!: number;
 
     @IsInt()
     @Min(0)
-    availableSpaces: number;
+    availableSpaces!: number;
 
     @IsOptional()
     @IsNumber()
@@ -88,15 +88,15 @@ export class UpdateParkingLotDto {
 
 export class CreateParkingSpaceDto {
     @IsUUID()
-    lotId: string;
+    lotId!: string;
 
     @IsString()
     @Length(1, 20)
-    code: string;
+    code!: string;
 
     @IsString()
     @Length(1, 20)
-    type: string; // regular | discapacitado | moto
+    type!: string; // regular | discapacitado | moto
 
     @IsOptional()
     @IsInt()

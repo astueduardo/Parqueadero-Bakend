@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "CommonJS",
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -11,14 +11,15 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": "./",
     "incremental": false,
     "skipLibCheck": true,
     "noImplicitAny": false,
-    "strict": false,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "6.0", // 👈 AÑADIDO
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     }
   },

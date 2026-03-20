@@ -9,10 +9,10 @@ import {
 export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name!: string;
 
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsOptional()
   @MinLength(6)

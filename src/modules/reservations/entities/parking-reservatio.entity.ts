@@ -23,48 +23,48 @@ export enum ReservationStatus {
 @Entity("reservations")
 export class Reservation {
     @PrimaryGeneratedColumn("uuid")
-    id: string;
+    id!: string;
 
     @ManyToOne(() => User, { onDelete: "CASCADE" })
     @JoinColumn({ name: "user_id" })
-    user: User;
+    user!: User;
 
     @Column({ name: "user_id", type: "uuid" })
-    userId: string;
+    userId!: string;
 
     @ManyToOne(() => ParkingSpace)
     @JoinColumn({ name: "space_id" })
-    space: ParkingSpace;
+    space!: ParkingSpace;
 
     @Column({ name: "space_id", type: "uuid" })
-    spaceId: string;
+    spaceId!: string;
 
     @ManyToOne(() => Vehicle, { nullable: true })
     @JoinColumn({ name: "vehicle_id" })
-    vehicle: Vehicle;
+    vehicle!: Vehicle;
 
     @Column({ name: "vehicle_id", type: "uuid", nullable: true })
-    vehicleId: string;
+    vehicleId!: string;
 
     @Column({ name: "start_time", type: "timestamp" })
-    startTime: Date;
+    startTime!: Date;
 
     @Column({ name: "end_time", type: "timestamp" })
-    endTime: Date;
+    endTime!: Date;
 
     @Column({
         type: "enum",
         enum: ReservationStatus,
         default: ReservationStatus.PENDING,
     })
-    status: ReservationStatus;
+    status!: ReservationStatus;
 
     @Column({ name: "qr_code", type: "text" })
-    qrCode: string;
+    qrCode!: string;
 
     @CreateDateColumn({ name: "created_at" })
-    createdAt: Date;
+    createdAt!: Date;
 
     @UpdateDateColumn({ name: "updated_at" })
-    updatedAt: Date;
+    updatedAt!: Date;
 }
