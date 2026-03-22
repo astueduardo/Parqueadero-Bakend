@@ -7,8 +7,8 @@
 /check-tables.js
 /check-http.js.map
 /test-backend.js
-/database.config.ts
-
+/database-cloud.config.ts
+/database-Local.config.ts
 # Logs
 logs
 *.log

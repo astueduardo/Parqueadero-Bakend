@@ -11,21 +11,21 @@ import { User } from '../../users/entities/user.entity';
 @Entity('audit_logs')
 export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @ManyToOne(() => User, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 
   @Column('uuid', { nullable: true })
-  user_id: string | null;
+  user_id!: string | null;
 
   @Column({ length: 120 })
-  action: string; // LOGIN, CREATE_RESERVATION, UPDATE_PROFILE, etc.
+  action!: string; // LOGIN, CREATE_RESERVATION, UPDATE_PROFILE, etc.
 
   @Column('text', { nullable: true })
-  description: string;
+  description!: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 }

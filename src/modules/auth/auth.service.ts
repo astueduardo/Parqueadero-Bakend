@@ -96,8 +96,12 @@ export class AuthService {
   async googleLoginWithToken(idToken: string) {
     const ticket = await this.googleClient.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+      audience: [
+        process.env.GOOGLE_CLIENT_ID!,
+        process.env.GOOGLE_CLIENT_ID_IOS!,
+        process.env.GOOGLE_CLIENT_ANDROID!,
+      ] as string[],
+    });;
 
     const payload = ticket.getPayload();
     if (!payload || !payload.email) {

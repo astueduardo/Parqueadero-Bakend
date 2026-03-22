@@ -4,38 +4,41 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-} from "typeorm";
+} from 'typeorm';
 
-@Entity("users")
+@Entity('users')
 export class User {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name!: string;
 
   @Column({ unique: true })
   email!: string;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   password!: string | null;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   googleId!: string | null;
 
   @Column({
-    type: "varchar",
+    type: 'varchar',
     length: 20,
-    default: "local",
+    default: 'local',
   })
-  auth_provider!: "local" | "google";
+  auth_provider!: 'local' | 'google';
+
+  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
+  username!: string | null;
 
   @Column({
-    type: "varchar",
+    type: 'varchar',
     length: 20,
-    default: "user",
+    default: 'user',
   })
-  role!: "user" | "admin" | "owner" | "operator";
+  role!: 'user' | 'admin' | 'owner' | 'operator';
 
   @CreateDateColumn()
   created_at!: Date;

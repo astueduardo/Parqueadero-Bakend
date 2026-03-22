@@ -22,10 +22,10 @@ export class UsersController {
     @Get(':id')
     @UseGuards(JwtAuthGuard)
     async findOne(@Param('id') id: string): Promise<User> {
-    const user = await this.usersService.findOne(id);
-    if (!user) throw new NotFoundException();
-    return user;
-}
+        const user = await this.usersService.findOne(id);
+        if (!user) throw new NotFoundException();
+        return user;
+    }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -34,20 +34,27 @@ export class UsersController {
         return this.usersService.create(userData as Partial<User>);
     }
 
-    @Patch(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin', 'gestor')
-    async update(@Param('id') id: string, @Body() data: UpdateUserDto): Promise<User> {
-        return this.usersService.update(id, data as Partial<User>);
-    }
-
     @Patch(':id/role')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin')
     async setRole(@Param('id') id: string, @Body() body: SetRoleDto) {
         return this.usersService.update(id, { role: body.role } as Partial<User>);
     }
-
+    // Agrega este endpoint en UsersController, antes del @Delete:
+    @Patch('profile')
+    @UseGuards(JwtAuthGuard)
+    async updateMyProfile(@Req() req: any, @Body() data: UpdateUserDto) {
+        const userId = req.user.id;
+        return this.usersService.update(userId, {
+            username: data.username
+        } as Partial<User>);
+    }
+    @Patch(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin', 'gestor')
+    async update(@Param('id') id: string, @Body() data: UpdateUserDto): Promise<User> {
+        return this.usersService.update(id, data as Partial<User>);
+    }
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin')
@@ -55,5 +62,5 @@ export class UsersController {
         await this.usersService.remove(id);
         return { success: true };
     }
-    
+
 }
