@@ -38,23 +38,26 @@ export class UsersController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin')
     async setRole(@Param('id') id: string, @Body() body: SetRoleDto) {
-        return this.usersService.update(id, { role: body.role } as Partial<User>);
+        return this.usersService.update(id, { role_id: body.role_id } as Partial<User>);
     }
-    // Agrega este endpoint en UsersController, antes del @Delete:
-    @Patch('profile')
+
+    @Patch('me')
     @UseGuards(JwtAuthGuard)
     async updateMyProfile(@Req() req: any, @Body() data: UpdateUserDto) {
-        const userId = req.user.id;
+        const userId = req.user.id; // siempre viene del JWT
         return this.usersService.update(userId, {
-            username: data.username
+            name: data.name,
+            username: data.username,
         } as Partial<User>);
     }
+
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin', 'gestor')
     async update(@Param('id') id: string, @Body() data: UpdateUserDto): Promise<User> {
         return this.usersService.update(id, data as Partial<User>);
     }
+
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin')

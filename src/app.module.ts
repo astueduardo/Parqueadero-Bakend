@@ -13,7 +13,7 @@ import { QrModule } from './modules/qr/qr.module';
 import { ParkingModule } from './modules/parking/parking.module';
 import databaseCloudConfig from './config/database-cloud.config';
 import databaseLocalConfig from './config/database-Local.config';
-
+import { RolesModule } from './modules/roles/roles.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,6 +23,7 @@ import databaseLocalConfig from './config/database-Local.config';
 
     DatabaseModule,
     AuthModule,
+    RolesModule,
     ParkingModule,
     UsersModule,
     ReservationsModule,

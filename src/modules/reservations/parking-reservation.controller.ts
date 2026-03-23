@@ -1,19 +1,10 @@
-// reservations/reservations.controller.ts
 import {
-    Controller,
-    Post,
-    Get,
-    Patch,
-    Param,
-    Body,
-    UseGuards,
-    Request,
-    HttpCode,
-    HttpStatus,
+    Controller, Post, Get, Patch,
+    Param, Body, UseGuards, Request, HttpCode, HttpStatus,
 } from "@nestjs/common";
 import { ReservationsService } from "../reservations/parking-reservation.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { ParkingReservationDto } from "./dto/parking-reservation.dto"; // ← Usamos tu DTO existente
+import { ParkingReservationDto } from "./dto/parking-reservation.dto";
 
 @Controller("reservations")
 @UseGuards(JwtAuthGuard)
@@ -22,26 +13,22 @@ export class ReservationsController {
 
     @Post()
     create(@Body() dto: ParkingReservationDto, @Request() req) {
-        const userId = req.user.user_id || req.user.id;
-        return this.reservationsService.create(userId, dto);
+        return this.reservationsService.create(req.user.id, dto);
     }
 
     @Get("my")
     findMy(@Request() req) {
-        const userId = req.user.user_id || req.user.id;
-        return this.reservationsService.findByUser(userId);
+        return this.reservationsService.findByUser(req.user.id);
     }
 
     @Get(":id")
     findOne(@Param("id") id: string, @Request() req) {
-        const userId = req.user.user_id || req.user.id;
-        return this.reservationsService.findOne(id, userId);
+        return this.reservationsService.findOne(id, req.user.id);
     }
 
     @Patch(":id/cancel")
     @HttpCode(HttpStatus.OK)
     cancel(@Param("id") id: string, @Request() req) {
-        const userId = req.user.user_id || req.user.id;
-        return this.reservationsService.cancel(id, userId);
+        return this.reservationsService.cancel(id, req.user.id);
     }
 }

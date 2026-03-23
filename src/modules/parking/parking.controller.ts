@@ -1,23 +1,12 @@
 import {
-    Controller,
-    Get,
-    Post,
-    Patch,
-    Delete,
-    Body,
-    Param,
-    UseGuards,
-    Request,
-    HttpCode,
-    HttpStatus,
+    Controller, Get, Post, Patch, Delete,
+    Body, Param, UseGuards, Request, HttpCode, HttpStatus,
 } from "@nestjs/common";
 import { ParkingService } from "./parking.service";
 import { ParkingSpacesService } from "./parking-spaces.service";
 import {
-    CreateParkingLotDto,
-    UpdateParkingLotDto,
-    CreateParkingSpaceDto,
-    UpdateParkingSpaceDto,
+    CreateParkingLotDto, UpdateParkingLotDto,
+    CreateParkingSpaceDto, UpdateParkingSpaceDto,
 } from "./dto/parking.dtos";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
@@ -36,8 +25,7 @@ export class ParkingLotsController {
     @Get("owner/my")
     @UseGuards(JwtAuthGuard)
     findMine(@Request() req) {
-        const ownerId = req.user.user_id || req.user.id;
-        return this.parkingService.findMyLots(ownerId);
+        return this.parkingService.findMyLots(req.user.id);
     }
 
     @Get(":id")
@@ -48,23 +36,20 @@ export class ParkingLotsController {
     @Post()
     @UseGuards(JwtAuthGuard)
     create(@Body() dto: CreateParkingLotDto, @Request() req) {
-        const ownerId = req.user.user_id || req.user.id;
-        return this.parkingService.createLot(ownerId, dto);
+        return this.parkingService.createLot(req.user.id, dto);
     }
 
     @Patch(":id")
     @UseGuards(JwtAuthGuard)
     update(@Param("id") id: string, @Body() dto: UpdateParkingLotDto, @Request() req) {
-        const ownerId = req.user.user_id || req.user.id;
-        return this.parkingService.updateLot(id, ownerId, dto);
+        return this.parkingService.updateLot(id, req.user.id, dto);
     }
 
     @Delete(":id")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     remove(@Param("id") id: string, @Request() req) {
-        const ownerId = req.user.user_id || req.user.id;
-        return this.parkingService.deleteLot(id, ownerId);
+        return this.parkingService.deleteLot(id, req.user.id);
     }
 }
 
@@ -79,7 +64,6 @@ export class ParkingSpacesController {
         private readonly spacesService: ParkingSpacesService,
     ) { }
 
-    // ── Rutas estáticas PRIMERO ──────────────────
     @Get("availability/all")
     getAllAvailability() {
         return this.spacesService.getAllLotsAvailability();
@@ -95,7 +79,6 @@ export class ParkingSpacesController {
         return this.spacesService.getAvailability(lotId);
     }
 
-    // ── Rutas con parámetros DESPUÉS ─────────────
     @Get(":id/check")
     checkAvailable(@Param("id") id: string) {
         return this.spacesService.isSpaceAvailable(id);
@@ -108,20 +91,17 @@ export class ParkingSpacesController {
 
     @Post()
     create(@Body() dto: CreateParkingSpaceDto, @Request() req) {
-        const userId = req.user.user_id || req.user.id;
-        return this.parkingService.createSpace(userId, dto);
+        return this.parkingService.createSpace(req.user.id, dto);
     }
 
     @Patch(":id")
     update(@Param("id") id: string, @Body() dto: UpdateParkingSpaceDto, @Request() req) {
-        const userId = req.user.user_id || req.user.id;
-        return this.parkingService.updateSpace(id, userId, dto);
+        return this.parkingService.updateSpace(id, req.user.id, dto);
     }
 
     @Delete(":id")
     @HttpCode(HttpStatus.OK)
     remove(@Param("id") id: string, @Request() req) {
-        const userId = req.user.user_id || req.user.id;
-        return this.parkingService.deleteSpace(id, userId);
+        return this.parkingService.deleteSpace(id, req.user.id);
     }
 }

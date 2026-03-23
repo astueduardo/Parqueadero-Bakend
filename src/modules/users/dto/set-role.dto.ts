@@ -1,7 +1,5 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-
+import { IsUUID } from 'class-validator';
 export class SetRoleDto {
-    @IsNotEmpty()
-    @IsString()
-    role!: string;
+    @IsUUID('4', { message: 'role_id debe ser un UUID válido' })
+    role_id!: string;
 }

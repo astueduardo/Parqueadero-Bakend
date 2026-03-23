@@ -15,25 +15,30 @@ export class ReservationsService {
     ) { }
 
     async create(userId: string, dto: ParkingReservationDto): Promise<Reservation> {
-        // 1. Verificar que el espacio existe y está disponible
         const isAvailable = await this.parkingSpacesService.isSpaceAvailable(dto.space_id);
         if (!isAvailable) {
-            throw new BadRequestException('El espacio no está disponible para reservar');
+            throw new BadRequestException('El espacio no está disponible');
         }
 
-        // 2. Verificar que no haya reservaciones que se solapen (por si acaso)
-        const overlapping = await this.reservationRepo.findOne({
-            where: {
-                spaceId: dto.space_id,
-                status: In([ReservationStatus.PENDING, ReservationStatus.CONFIRMED, ReservationStatus.IN_PROGRESS]),
-                // Lógica de solapamiento de fechas
-            }
-        });
+        // ✅ Verificación real de solapamiento de fechas
+        const overlapping = await this.reservationRepo
+            .createQueryBuilder('r')
+            .where('r.spaceId = :spaceId', { spaceId: dto.space_id })
+            .andWhere('r.status IN (:...statuses)', {
+                statuses: [
+                    ReservationStatus.PENDING,
+                    ReservationStatus.CONFIRMED,
+                    ReservationStatus.IN_PROGRESS,
+                ],
+            })
+            .andWhere('r.startTime < :endTime', { endTime: new Date(dto.end_time) })
+            .andWhere('r.endTime > :startTime', { startTime: new Date(dto.start_time) })
+            .getOne();
+
         if (overlapping) {
-            throw new BadRequestException('Ya existe una reservación para este espacio en el mismo horario');
+            throw new BadRequestException('El espacio ya está reservado en ese horario');
         }
 
-        // 3. Crear la reservación
         const reservation = this.reservationRepo.create({
             userId,
             spaceId: dto.space_id,
@@ -41,12 +46,11 @@ export class ReservationsService {
             startTime: new Date(dto.start_time),
             endTime: new Date(dto.end_time),
             status: ReservationStatus.PENDING,
-            qrCode: this.generateQRCode(), // Implementa la generación de QR
+            qrCode: `QR-${Date.now()}-${Math.random().toString(36).substring(7)}`,
         });
 
         return this.reservationRepo.save(reservation);
     }
-
     async findByUser(userId: string): Promise<Reservation[]> {
         return this.reservationRepo.find({
             where: { userId },

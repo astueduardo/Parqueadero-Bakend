@@ -11,6 +11,7 @@ import { LoginDto, RegisterDto } from "./dto/auth.dto";
 import { UsersService } from "../users/users.service";
 import { RateLimitService } from "./rate-limit.service";
 import { User } from "../users/entities/user.entity";
+import { AuditLogService } from '../audit/audit-log.service';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,8 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     private usersService: UsersService,
-    private rateLimitService: RateLimitService
+    private rateLimitService: RateLimitService,
+    private auditLogService: AuditLogService,
   ) {
     this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   }
@@ -47,10 +49,13 @@ export class AuthService {
       password: hashedPassword,
       auth_provider: "local",
       googleId: null,
-      role: "user",
+      role_id: "00000000-0000-0000-0000-000000000004",
     } as Partial<User>);
 
+    await this.auditLogService.log('REGISTER', user.id, `Nuevo usuario: ${email}`);
+
     return this.generateToken(user);
+
   }
 
   // ===============================
@@ -59,35 +64,36 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Verificar rate limit
-    if (this.rateLimitService.isRateLimited(email)) {
+    // 1. Verificar si está bloqueado
+    if (await this.rateLimitService.isRateLimited(email)) {
       throw new UnauthorizedException(
         "Demasiados intentos fallidos. Intenta en 15 minutos.",
       );
     }
 
+    // 2. Buscar usuario
     const user = await this.usersService.findByEmail(email);
     if (!user || user.auth_provider !== "local") {
-      this.rateLimitService.recordAttempt(email);
-      const remaining = this.rateLimitService.getAttemptsRemaining(email);
+      await this.rateLimitService.recordAttempt(email);
+      const remaining = await this.rateLimitService.getAttemptsRemaining(email);
       throw new UnauthorizedException(
         `Credenciales inválidas. (${remaining} intentos restantes)`,
       );
     }
 
+    // 3. Verificar contraseña
     const valid = await bcrypt.compare(password, user.password!);
     if (!valid) {
-      this.rateLimitService.recordAttempt(email);
-      const remaining = this.rateLimitService.getAttemptsRemaining(email);
+      await this.rateLimitService.recordAttempt(email);
+      const remaining = await this.rateLimitService.getAttemptsRemaining(email);
       throw new UnauthorizedException(
         `Credenciales inválidas. (${remaining} intentos restantes)`,
       );
     }
 
-    // Login exitoso, resetear intentos
-    this.rateLimitService.resetAttempts(email);
-
+    await this.auditLogService.log('LOGIN', user.id, `Login: ${email}`);
     return this.generateToken(user);
+
   }
 
   // ===============================
@@ -101,7 +107,7 @@ export class AuthService {
         process.env.GOOGLE_CLIENT_ID_IOS!,
         process.env.GOOGLE_CLIENT_ANDROID!,
       ] as string[],
-    });;
+    });
 
     const payload = ticket.getPayload();
     if (!payload || !payload.email) {
@@ -117,14 +123,13 @@ export class AuthService {
         googleId: payload.sub,
         password: null,
         auth_provider: "google",
-        role: "user",
+        role_id: "00000000-0000-0000-0000-000000000004",
       });
     }
 
+    await this.auditLogService.log('LOGIN_GOOGLE', user.id, `Google login: ${user.email}`);
     return this.generateToken(user);
   }
-
-
 
   // ===============================
   // JWT
@@ -134,14 +139,14 @@ export class AuthService {
       access_token: this.jwtService.sign({
         sub: user.id,
         email: user.email,
-        role: user.role,
+        role_id: user.role_id,
       }),
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         auth_provider: user.auth_provider,
-        role: user.role,
+        role_id: user.role_id,
         createdAt: user.created_at,
       },
     };

@@ -1,67 +1,55 @@
 import { Injectable } from '@nestjs/common';
-
-interface LoginAttempt {
-    attempts: number;
-    lastAttempt: Date;
-}
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, LessThan } from 'typeorm';
+import { LoginAttempt } from './entities/login-attempt.entity';
 
 @Injectable()
 export class RateLimitService {
-    private loginAttempts: Map<string, LoginAttempt> = new Map();
-    private readonly MAX_ATTEMPTS = 5; // Máximo 5 intentos
-    private readonly WINDOWS_MS = 15 * 60 * 1000; // Ventana de 15 minutos
+    private readonly MAX_ATTEMPTS = 5;
+    private readonly WINDOW_MS = 15 * 60 * 1000; // 15 min
 
-    isRateLimited(identifier: string): boolean {
-        const attempt = this.loginAttempts.get(identifier);
+    constructor(
+        @InjectRepository(LoginAttempt)
+        private readonly repo: Repository<LoginAttempt>,
+    ) { }
 
-        if (!attempt) {
+    async isRateLimited(identifier: string): Promise<boolean> {
+        const record = await this.repo.findOne({ where: { identifier } });
+        if (!record) return false;
+
+        const expired = Date.now() - record.lastAttempt.getTime() > this.WINDOW_MS;
+        if (expired) {
+            await this.repo.delete({ identifier });
             return false;
         }
 
-        const now = new Date();
-        const timePassed = now.getTime() - attempt.lastAttempt.getTime();
-
-        // Si ha pasado la ventana, resetear
-        if (timePassed > this.WINDOWS_MS) {
-            this.loginAttempts.delete(identifier);
-            return false;
-        }
-
-        return attempt.attempts >= this.MAX_ATTEMPTS;
+        return record.attempts >= this.MAX_ATTEMPTS;
     }
 
-    recordAttempt(identifier: string): void {
-        const attempt = this.loginAttempts.get(identifier) || {
-            attempts: 0,
-            lastAttempt: new Date(),
-        };
+    async recordAttempt(identifier: string): Promise<void> {
+        const record = await this.repo.findOne({ where: { identifier } });
 
-        attempt.attempts += 1;
-        attempt.lastAttempt = new Date();
-
-        this.loginAttempts.set(identifier, attempt);
-    }
-
-    resetAttempts(identifier: string): void {
-        this.loginAttempts.delete(identifier);
-    }
-
-    getAttemptsRemaining(identifier: string): number {
-        const attempt = this.loginAttempts.get(identifier);
-
-        if (!attempt) {
-            return this.MAX_ATTEMPTS;
+        if (!record) {
+            await this.repo.save(this.repo.create({ identifier, attempts: 1 }));
+            return;
         }
 
-        const now = new Date();
-        const timePassed = now.getTime() - attempt.lastAttempt.getTime();
+        const expired = Date.now() - record.lastAttempt.getTime() > this.WINDOW_MS;
+        record.attempts = expired ? 1 : record.attempts + 1;
+        await this.repo.save(record);
+    }
 
-        // Si ha pasado la ventana, resetear
-        if (timePassed > this.WINDOWS_MS) {
-            this.loginAttempts.delete(identifier);
-            return this.MAX_ATTEMPTS;
-        }
+    async resetAttempts(identifier: string): Promise<void> {
+        await this.repo.delete({ identifier });
+    }
 
-        return Math.max(0, this.MAX_ATTEMPTS - attempt.attempts);
+    async getAttemptsRemaining(identifier: string): Promise<number> {
+        const record = await this.repo.findOne({ where: { identifier } });
+        if (!record) return this.MAX_ATTEMPTS;
+
+        const expired = Date.now() - record.lastAttempt.getTime() > this.WINDOW_MS;
+        if (expired) return this.MAX_ATTEMPTS;
+
+        return Math.max(0, this.MAX_ATTEMPTS - record.attempts);
     }
 }

@@ -9,6 +9,7 @@
 /test-backend.js
 /database-cloud.config.ts
 /database-Local.config.ts
+/
 # Logs
 logs
 *.log
