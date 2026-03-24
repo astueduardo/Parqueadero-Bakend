@@ -124,8 +124,15 @@ export class AuthService {
         password: null,
         auth_provider: "google",
         role_id: "00000000-0000-0000-0000-000000000004",
+        avatar_url: payload.picture || null,
       });
     }
+    else if (!user.avatar_url && payload.picture) {
+      // Si ya existe pero sin foto → actualizar
+      await this.usersService.update(user.id, { avatar_url: payload.picture } as any);
+      user = await this.usersService.findOne(user.id) as User;
+    }
+
 
     await this.auditLogService.log('LOGIN_GOOGLE', user.id, `Google login: ${user.email}`);
     return this.generateToken(user);
@@ -134,12 +141,16 @@ export class AuthService {
   // ===============================
   // JWT
   // ===============================
-  private generateToken(user: User) {
+  private async generateToken(user: User) {
+    const roleEntity = await this.usersService.findOneWithRole(user.id);
+    const roleName = roleEntity?.roleEntity?.name || 'user';
+
     return {
       access_token: this.jwtService.sign({
         sub: user.id,
         email: user.email,
         role_id: user.role_id,
+        role: roleName,
       }),
       user: {
         id: user.id,
@@ -148,6 +159,7 @@ export class AuthService {
         auth_provider: user.auth_provider,
         role_id: user.role_id,
         createdAt: user.created_at,
+        role: roleName,
       },
     };
   }

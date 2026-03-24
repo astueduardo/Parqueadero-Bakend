@@ -5,13 +5,15 @@ import { Repository, In } from "typeorm";
 import { Reservation, ReservationStatus } from "./entities/parking-reservatio.entity";
 import { ParkingSpacesService } from "../parking/parking-spaces.service";
 import { ParkingReservationDto } from "./dto/parking-reservation.dto";
-
+import { NotificationsService } from '../notifications/notifications.service';
 @Injectable()
 export class ReservationsService {
     constructor(
         @InjectRepository(Reservation)
         private readonly reservationRepo: Repository<Reservation>,
-        private readonly parkingSpacesService: ParkingSpacesService, // Para verificar disponibilidad
+        private readonly parkingSpacesService: ParkingSpacesService,
+        private readonly notificationsService: NotificationsService,
+
     ) { }
 
     async create(userId: string, dto: ParkingReservationDto): Promise<Reservation> {
@@ -90,13 +92,12 @@ export class ReservationsService {
 
         reservation.status = ReservationStatus.CANCELLED;
         await this.reservationRepo.save(reservation);
-
+        await this.notificationsService.notifyReservationCancelled(
+            reservation.userId,
+            reservation.space.lot.name,
+        );
         return { message: 'Reservación cancelada exitosamente' };
     }
 
-    private generateQRCode(): string {
-        // Implementa la generación de QR
-        // Puedes usar librerías como 'qrcode' o generar un código único
-        return `QR-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    }
+
 }

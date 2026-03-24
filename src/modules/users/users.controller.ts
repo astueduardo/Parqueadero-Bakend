@@ -51,6 +51,14 @@ export class UsersController {
         } as Partial<User>);
     }
 
+    @Patch('me/avatar')
+    @UseGuards(JwtAuthGuard)
+    async updateAvatar(@Req() req: any, @Body() body: { avatar_url: string }) {
+        return this.usersService.update(req.user.id, {
+            avatar_url: body.avatar_url,
+        } as Partial<User>);
+    }
+
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin', 'gestor')

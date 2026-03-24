@@ -9,6 +9,7 @@ import Stripe from 'stripe';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Reservation, ReservationStatus } from '../reservations/entities/parking-reservatio.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
@@ -20,6 +21,7 @@ export class PaymentsService {
         @InjectRepository(Reservation)
         private readonly reservationRepo: Repository<Reservation>,
         private readonly configService: ConfigService,
+        private readonly notificationsService: NotificationsService,
     ) {
         this.stripe = new Stripe(
             this.configService.get<string>('STRIPE_SECRET_KEY')!,
@@ -39,11 +41,13 @@ export class PaymentsService {
             throw new NotFoundException('Reserva no encontrada');
         }
 
+        // 2. Verificar que no esté cancelada
         if (reservation.status === ReservationStatus.CANCELLED) {
+            await this.notificationsService.notifyPaymentFailed(userId);
             throw new BadRequestException('No se puede pagar una reserva cancelada');
         }
 
-        // 2. Verificar pago previo
+        // 3. Verificar pago previo exitoso
         const existingPayment = await this.paymentRepo.findOne({
             where: {
                 reservation_id: dto.reservation_id,
@@ -54,7 +58,7 @@ export class PaymentsService {
             throw new BadRequestException('Esta reserva ya tiene un pago exitoso');
         }
 
-        // 3. Calcular monto
+        // 4. Calcular monto
         const pricePerHour = Number(reservation.space.lot.price) || 1;
         const hours = Math.ceil(
             (new Date(reservation.endTime).getTime() - new Date(reservation.startTime).getTime())
@@ -62,44 +66,52 @@ export class PaymentsService {
         );
         const amount = pricePerHour * hours;
 
-        // 4. Crear PaymentIntent en Stripe
-        const paymentIntent = await this.stripe.paymentIntents.create({
-            amount: Math.round(amount * 100), // centavos
-            currency: this.configService.get<string>('STRIPE_CURRENCY') || 'usd',
-            metadata: {
-                reservation_id: reservation.id,
-                user_id: userId,
-            },
-        });
+        // 5. Crear PaymentIntent en Stripe — con try/catch para capturar errores
+        try {
+            const paymentIntent = await this.stripe.paymentIntents.create({
+                amount: Math.round(amount * 100),
+                currency: this.configService.get<string>('STRIPE_CURRENCY') || 'usd',
+                metadata: {
+                    reservation_id: reservation.id,
+                    user_id: userId,
+                },
+            });
 
-        // 5. Guardar pago en estado PENDING
-        await this.paymentRepo.save(
-            this.paymentRepo.create({
-                user_id: userId,
-                reservation_id: dto.reservation_id,
+            // 6. Guardar pago en estado PENDING
+            await this.paymentRepo.save(
+                this.paymentRepo.create({
+                    user_id: userId,
+                    reservation_id: dto.reservation_id,
+                    amount,
+                    currency: 'USD',
+                    payment_method: 'card',
+                    external_reference: paymentIntent.id,
+                    status: PaymentStatus.PENDING,
+                })
+            );
+
+            // 7. Devolver client_secret al frontend
+            return {
+                client_secret: paymentIntent.client_secret,
                 amount,
                 currency: 'USD',
-                payment_method: 'card',
-                external_reference: paymentIntent.id,
-                status: PaymentStatus.PENDING,
-            })
-        );
+                reservation_id: dto.reservation_id,
+            };
 
-        // 6. Devolver client_secret al frontend
-        return {
-            client_secret: paymentIntent.client_secret,
-            amount,
-            currency: 'USD',
-            reservation_id: dto.reservation_id,
-        };
+        } catch (error: any) {
+            // Si Stripe falla → notificar al usuario y lanzar error
+            await this.notificationsService.notifyPaymentFailed(userId);
+            throw new BadRequestException(error?.message || 'El pago no pudo procesarse');
+        }
     }
 
-    // ── Paso 2: Frontend confirma → notifica al backend ──
+    // ── Paso 2: Frontend confirma → backend actualiza BD ──
     async confirmPayment(userId: string, paymentIntentId: string) {
-        // 1. Verificar en Stripe que el pago realmente fue exitoso
+        // 1. Verificar en Stripe que el pago fue exitoso
         const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
         if (paymentIntent.status !== 'succeeded') {
+            await this.notificationsService.notifyPaymentFailed(userId);
             throw new BadRequestException(`Pago no completado. Estado: ${paymentIntent.status}`);
         }
 
@@ -124,6 +136,9 @@ export class PaymentsService {
             reservation.status = ReservationStatus.CONFIRMED;
             await this.reservationRepo.save(reservation);
         }
+
+        // 4. Notificar pago exitoso
+        await this.notificationsService.notifyPaymentSucceeded(userId, payment.amount);
 
         return { message: 'Pago confirmado', payment };
     }

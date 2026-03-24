@@ -5,11 +5,12 @@ import { Reservation } from "./entities/parking-reservatio.entity";
 import { ReservationsService } from "./parking-reservation.service";
 import { ReservationsController } from "./parking-reservation.controller";
 import { ParkingModule } from "../parking/parking.module"; // Importamos ParkingModule
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Reservation]),
-        ParkingModule, // Necesario para usar ParkingSpacesService
+        ParkingModule, NotificationsModule, // Necesario para usar ParkingSpacesService
     ],
     controllers: [ReservationsController],
     providers: [ReservationsService],

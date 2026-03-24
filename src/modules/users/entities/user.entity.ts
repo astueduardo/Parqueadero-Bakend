@@ -9,8 +9,14 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ type: 'text', nullable: true })
+  avatar_url!: string | null;
+
   @Column({ type: 'varchar' })
   name!: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
+  username!: string | null;
 
   @Column({ unique: true })
   email!: string;
@@ -24,8 +30,8 @@ export class User {
   @Column({ type: 'varchar', length: 20, default: 'local' })
   auth_provider!: 'local' | 'google';
 
-  @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
-  username!: string | null;
+  @Column({ type: 'varchar', nullable: true })
+  push_token!: string | null;
 
   @Column({ type: 'uuid', nullable: true, name: 'role_id' })
   role_id!: string | null;

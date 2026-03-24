@@ -14,6 +14,8 @@ import { ParkingModule } from './modules/parking/parking.module';
 import databaseCloudConfig from './config/database-cloud.config';
 import databaseLocalConfig from './config/database-Local.config';
 import { RolesModule } from './modules/roles/roles.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,6 +26,7 @@ import { RolesModule } from './modules/roles/roles.module';
     DatabaseModule,
     AuthModule,
     RolesModule,
+    NotificationsModule,
     ParkingModule,
     UsersModule,
     ReservationsModule,

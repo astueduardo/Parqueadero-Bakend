@@ -5,7 +5,7 @@ import { Reservation } from '../reservations/entities/parking-reservatio.entity'
 import { ReservationStatus } from '../reservations/entities/parking-reservatio.entity';
 import { QrValidation, ScanType } from './entites/qr-validation.entity';
 import * as QRCode from 'qrcode';
-
+import { NotificationsService } from '../notifications/notifications.service';
 @Injectable()
 export class QrService {
 
@@ -17,6 +17,8 @@ export class QrService {
 
     @InjectRepository(QrValidation)
     private readonly qrValidationRepo: Repository<QrValidation>,
+
+    private readonly notificationsService: NotificationsService,
   ) { }
 
   // =========================
@@ -58,6 +60,7 @@ export class QrService {
 
       const reservation = await manager.findOne(Reservation, {
         where: { id: reservationId },
+        relations: ['space', 'space.lot'], // ← agregar relations
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -106,6 +109,10 @@ export class QrService {
 
         reservation.status = ReservationStatus.IN_PROGRESS;
         await manager.save(reservation);
+        await this.notificationsService.notifyQrEntry(
+          reservation.userId,
+          reservation.space?.lot?.name || 'Parqueadero',
+        );
 
         return {
           success: true,
@@ -136,7 +143,10 @@ export class QrService {
 
         reservation.status = ReservationStatus.COMPLETED;
         await manager.save(reservation);
-
+        await this.notificationsService.notifyQrExit(
+          reservation.userId,
+          reservation.space?.lot?.name || 'Parqueadero',
+        );
         return {
           success: true,
           type: ScanType.EXIT,
